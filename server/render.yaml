@@ -1,0 +1,35 @@
+# Render Blueprint for the Viaduct Pay ledger.
+#
+# IMPORTANT: push the CONTENTS of the server/ folder as the repository root.
+# Render resolves dockerfilePath/dockerContext relative to the repo root, so a
+# monorepo push needs dockerfilePath: ./server/Dockerfile and
+# dockerContext: ./server instead.
+#
+# The service reads DATABASE_URL from the environment group "viaduct-db-env".
+# Render does not allow `sync: false` inside an environment group, so create the
+# group in the dashboard (with your Neon URL) BEFORE applying this Blueprint.
+
+services:
+  - type: web
+    name: viaduct-ledger
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - fromGroup: viaduct-db-env
+      - key: SEED_ON_START
+        value: "1"
+      - key: START_BALANCE_CENTS
+        value: "250000"
+      - key: CREDIT_CEILING_CENTS
+        value: "500000"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "20"
+      - key: PEER_ONLINE_SECONDS
+        value: "180"
+      - key: PUBLIC_BASE_URL
+        value: "https://viaduct-ledger.onrender.com"
