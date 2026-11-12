@@ -22,7 +22,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
-const { spawn, spawnSync } = require('node:child_process');
+const { spawn } = require('node:child_process');
 
 const HERE = __dirname;
 const REPO = path.resolve(HERE, '..');
@@ -201,19 +201,40 @@ const QR_SCRIPT = [
   'img.save(out)',
 ].join('\n');
 
+const qrCache = new Map();
+
 function qrPng(data, size) {
-  const key = crypto.createHash('sha1').update(`${data}|${size}`).digest('hex') + '.png';
-  const file = path.join(QR_CACHE, key);
-  if (!fs.existsSync(file)) {
-    const result = spawnSync(PYTHON, ['-c', QR_SCRIPT, data, file, String(size)], {
-      encoding: 'utf8',
-      timeout: 15000,
-    });
-    if (result.status !== 0) {
-      throw new Error((result.stderr || result.error || 'qr generation failed').toString().trim());
-    }
+  const key = `${data}|${size}`;
+  if (qrCache.has(key)) return Promise.resolve(qrCache.get(key));
+
+  const file = path.join(QR_CACHE, crypto.createHash('sha1').update(key).digest('hex') + '.png');
+  if (fs.existsSync(file)) {
+    const cached = fs.readFileSync(file);
+    qrCache.set(key, cached);
+    return Promise.resolve(cached);
   }
-  return fs.readFileSync(file);
+
+  // Async on purpose: generating a QR takes ~1 s of Python startup and must not
+  // block the proxy that serves /api/v1.
+  return new Promise((resolve, reject) => {
+    const child = spawn(PYTHON, ['-c', QR_SCRIPT, data, file, String(size)], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+      windowsHide: true,
+    });
+    let stderr = '';
+    child.stderr.setEncoding('utf8');
+    child.stderr.on('data', (chunk) => (stderr += chunk));
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code !== 0 || !fs.existsSync(file)) {
+        reject(new Error(stderr.trim() || `qr generation failed (exit ${code})`));
+        return;
+      }
+      const png = fs.readFileSync(file);
+      qrCache.set(key, png);
+      resolve(png);
+    });
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -375,15 +396,16 @@ const server = http.createServer((req, res) => {
   if (pathname === '/qr.png') {
     const data = (url.searchParams.get('data') || PUBLIC_URL).slice(0, 512);
     const size = Math.min(Math.max(Number(url.searchParams.get('size')) || 300, 120), 900);
-    try {
-      const png = qrPng(data, size);
-      res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'no-store', 'content-length': png.length });
-      res.end(png);
-    } catch (err) {
-      console.error('[qr]', err.message);
-      res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ detail: 'E_QR_FAILED', message: err.message }));
-    }
+    qrPng(data, size)
+      .then((png) => {
+        res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'no-store', 'content-length': png.length });
+        res.end(png);
+      })
+      .catch((err) => {
+        console.error('[qr]', err.message);
+        res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ detail: 'E_QR_FAILED', message: err.message }));
+      });
     return;
   }
 
@@ -403,7 +425,7 @@ const server = http.createServer((req, res) => {
 });
 
 function shutdown() {
-  console.log('\n[sim] shutting down…');
+  console.log('\n[sim] shutting down...');
   try {
     if (api && !api.killed) api.kill();
   } catch {
@@ -429,7 +451,7 @@ process.on('SIGTERM', shutdown);
 
   server.listen(SIM_PORT, BIND, () => {
     console.log('');
-    console.log('  Viaduct Pay — mobile simulation');
+    console.log('  Viaduct Pay - mobile simulation');
     console.log(`  open on this PC : http://localhost:${SIM_PORT}`);
     console.log(`  open on a phone : ${PUBLIC_URL}`);
     console.log(`  join QR page    : ${PUBLIC_URL}/join`);

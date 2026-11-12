@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f8fb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Viaduct Pay">
+  <meta name="description" content="Temporary mobile simulation of the Viaduct Pay demo credit ledger.">
+  <title>Viaduct Pay</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="stage">
+    <div class="phone" id="phone">
+      <header class="appbar" id="appbar"></header>
+      <main class="main" id="main" tabindex="-1"></main>
+      <nav class="tabbar" id="tabbar" hidden></nav>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <noscript>
+    <p style="padding:24px;font-family:system-ui">This simulation needs JavaScript. Enable it and reload.</p>
+  </noscript>
+  <script src="/vendor/jsQR.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

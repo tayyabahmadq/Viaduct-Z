@@ -25,3 +25,6 @@ android/.idea/
 
 # Build artifacts
 Viaduct-Z-submission.zip
+
+# Mobile simulation cache
+sim/.cache/
