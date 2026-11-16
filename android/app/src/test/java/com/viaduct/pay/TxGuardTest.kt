@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -37,7 +38,8 @@ class TxGuardTest {
 
     @Test
     fun fixturesArePresent() {
-        assertEquals(30, fixtures.size)
+        // The canonical 30 are frozen; scripts/gen_fixtures.py only appends.
+        assertTrue("expected at least the 30 canonical fixtures", fixtures.size >= 30)
     }
 
     @Test

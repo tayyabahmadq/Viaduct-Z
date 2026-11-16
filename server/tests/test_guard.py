@@ -19,8 +19,9 @@ FIXTURES_PATH = (
 FIXTURES = json.loads(FIXTURES_PATH.read_text(encoding="utf-8"))
 
 
-def test_fixture_file_has_thirty_cases():
-    assert len(FIXTURES) == 30
+def test_fixture_file_has_at_least_thirty_cases():
+    # The canonical 30 are frozen; `scripts/gen_fixtures.py` only appends.
+    assert len(FIXTURES) >= 30
 
 
 def test_fixture_names_are_unique():

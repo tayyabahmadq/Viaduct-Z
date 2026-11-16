@@ -825,5 +825,454 @@
       "reason": "",
       "score": 0
     }
+  },
+  {
+    "name": "extended: zero balance still allows a zero amount",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 0,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 0,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "ALLOW",
+      "code": "OK",
+      "reason": "",
+      "score": 0
+    }
+  },
+  {
+    "name": "extended: zero ceiling blocks one cent",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 1,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 0,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "DENY",
+      "code": "E_CEILING_EXCEEDED",
+      "reason": "Exceeds credit ceiling",
+      "score": 100
+    }
+  },
+  {
+    "name": "extended: maximum transfer is allowed under the cap",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 10000000,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 10000000,
+      "credit_ceiling": 10000000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "ALLOW",
+      "code": "OK",
+      "reason": "",
+      "score": 0
+    }
+  },
+  {
+    "name": "extended: one cent over the maximum ceiling",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 10000001,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 10000001,
+      "credit_ceiling": 10000000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "DENY",
+      "code": "E_CEILING_EXCEEDED",
+      "reason": "Exceeds credit ceiling",
+      "score": 100
+    }
+  },
+  {
+    "name": "extended: self payment beats a bad checksum",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "sender",
+      "amount": 1000,
+      "nonce": "gen-nonce",
+      "token48": "000000010002000010001001123456789012345678900087",
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "DENY",
+      "code": "E_SELF_PAY",
+      "reason": "Self payment",
+      "score": 10
+    }
+  },
+  {
+    "name": "extended: blacklist beats nonce replay",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 1000,
+      "nonce": "seen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [
+        "seen-nonce"
+      ],
+      "blacklist": [
+        "recv"
+      ]
+    },
+    "expected": {
+      "decision": "DENY",
+      "code": "E_QUARANTINED_PEER",
+      "reason": "Receiver blacklisted",
+      "score": 100
+    }
+  },
+  {
+    "name": "extended: nonce replay beats velocity",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 1000,
+      "nonce": "seen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [
+        1619999999000,
+        1619999998000,
+        1619999997000,
+        1619999996000,
+        1619999995000
+      ],
+      "seen_nonces": [
+        "seen-nonce"
+      ],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "DENY",
+      "code": "E_DUPLICATE_TOKEN",
+      "reason": "Duplicate nonce",
+      "score": 45
+    }
+  },
+  {
+    "name": "extended: velocity beats credit ceiling",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 6000,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [
+        1619999999000,
+        1619999998000,
+        1619999997000,
+        1619999996000,
+        1619999995000
+      ],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "DENY",
+      "code": "E_GUARDRAIL_BLOCKED",
+      "reason": "velocity",
+      "score": 25
+    }
+  },
+  {
+    "name": "extended: six payments in the window trip velocity",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 1000,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [
+        1619999999000,
+        1619999998000,
+        1619999997000,
+        1619999996000,
+        1619999995000,
+        1619999999400
+      ],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "DENY",
+      "code": "E_GUARDRAIL_BLOCKED",
+      "reason": "velocity",
+      "score": 25
+    }
+  },
+  {
+    "name": "extended: five payments one ms outside the window are allowed",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 1000,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [
+        1619999939999,
+        1619999939998,
+        1619999939997,
+        1619999939996,
+        1619999939995
+      ],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "ALLOW",
+      "code": "OK",
+      "reason": "",
+      "score": 0
+    }
+  },
+  {
+    "name": "extended: valid token at exactly the balance limit",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 2000,
+      "nonce": "gen-nonce",
+      "token48": "000000010002000020000001123456789012345678900009",
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "ALLOW",
+      "code": "OK",
+      "reason": "",
+      "score": 0
+    }
+  },
+  {
+    "name": "extended: checksum failure wins over an over-ceiling amount",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 999999,
+      "nonce": "gen-nonce",
+      "token48": "000000010002009999991001123456789012345678900078",
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "DENY",
+      "code": "E_GUARDRAIL_BLOCKED",
+      "reason": "checksum",
+      "score": 45
+    }
+  },
+  {
+    "name": "extended: an unknown receiver is not a pure-screen rule",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "never-seen",
+      "amount": 1000,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "ALLOW",
+      "code": "OK",
+      "reason": "",
+      "score": 0
+    }
+  },
+  {
+    "name": "extended: an empty blacklist changes nothing",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 1000,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "ALLOW",
+      "code": "OK",
+      "reason": "",
+      "score": 0
+    }
+  },
+  {
+    "name": "extended: blacklist matches the exact receiver id only",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv-2",
+      "amount": 1000,
+      "nonce": "gen-nonce",
+      "token48": null,
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": [
+        "recv"
+      ]
+    },
+    "expected": {
+      "decision": "ALLOW",
+      "code": "OK",
+      "reason": "",
+      "score": 0
+    }
+  },
+  {
+    "name": "extended: a valid all-zero token verifies",
+    "tx": {
+      "sender_account_id": "sender",
+      "receiver_account_id": "recv",
+      "amount": 1000,
+      "nonce": "gen-nonce",
+      "token48": "000000000000000000000000000000000000000000000000",
+      "timestamp_ms": 1620000000000
+    },
+    "state": {
+      "account_id": "sender",
+      "balance": 2000,
+      "credit_ceiling": 5000,
+      "seq": 1,
+      "recent_timestamps_ms": [],
+      "seen_nonces": [],
+      "blacklist": []
+    },
+    "expected": {
+      "decision": "ALLOW",
+      "code": "OK",
+      "reason": "",
+      "score": 0
+    }
   }
 ]
