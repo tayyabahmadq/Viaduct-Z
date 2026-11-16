@@ -8,8 +8,8 @@ this machine.
 | Item | How |
 |---|---|
 | Server imports and boots | `uvicorn app.main:app` on port 8011, `/health` returned `ok` |
-| 84 server tests | `python -m pytest` in `server/` → **84 passed** |
-| Guard fixtures (30 cases) | `server/tests/test_guard.py`, parametrised over `fixtures/guard_fixtures.json` |
+| 116 server tests | `python -m pytest` in `server/` → **116 passed, 1 skipped** |
+| Guard fixtures (46 cases) | `server/tests/test_guard.py`, parametrised over `fixtures/guard_fixtures.json` (30 canonical + 16 appended) |
 | Token layout | 48 digits, mod-97 checksum, decode round-trip, tamper rejection |
 | Live payment flow | `deploy/seed_and_smoke.sh` and `deploy/seed_and_smoke.ps1` both exited 0 against the live server |
 | Ceiling decline | Smoke test expects and received `E_CEILING_EXCEEDED` |
@@ -19,6 +19,7 @@ this machine.
 | PayPal client contract | Unit-tested with `httpx.MockTransport`: token call, order body (`25.00`), `PayPal-Request-Id`, approval link, capture id/amount parsing, 422 error mapping |
 | PayPal top-up endpoints | Tested with a fake PayPal client: wallet credited once, capture replay does not double-credit, another user's order is rejected, 503 without credentials, 502 on PayPal errors |
 | AI assistant | Rules path live-verified against a seeded peer; model path tested with a mocked OpenAI-compatible response; invalid JSON falls back to rules |
+| Double-entry journal | 8 tests in `test_ledger.py`: a settled payment writes one DEBIT + one CREDIT, declines write none, replay writes no duplicate, batch journals each accepted item, summary reconciles, backfill repairs a deleted leg |
 | Kotlin source review | Independent static review of imports, Compose BOM 2024.09.03 signatures, Retrofit paths and DTO field/type parity with `schemas.py`: no compile blockers found. This is a review, **not** a compiler. |
 
 ## Not verified here — no Android SDK, no Docker, no cloud account

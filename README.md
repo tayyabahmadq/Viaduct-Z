@@ -26,7 +26,7 @@ Viaduct-Z/
 │   │   ├── assistant.py        # NL payment intent: model + rules fallback
 │   │   ├── seed.py             # six demo wallets
 │   │   └── routers/            # accounts, payments, peers, tokens, topups, assistant
-│   ├── tests/                  # 84 passing tests
+│   ├── tests/                  # 116 passing tests (+1 deliberate skip)
 │   ├── Dockerfile
 │   ├── render.yaml
 │   └── requirements.txt
@@ -36,7 +36,7 @@ Viaduct-Z/
 │       ├── data/               # Api.kt, LocalStorage.kt
 │       ├── ui/                 # Screens.kt, TopUpScreen.kt, AssistantScreen.kt, Qr.kt, Format.kt
 │       └── utils/TxGuard.kt    # client mirror of guard.py
-├── fixtures/guard_fixtures.json   # 30 cases shared by Python and Kotlin tests
+├── fixtures/guard_fixtures.json   # 46 cases shared by Python and Kotlin tests
 ├── deploy/                     # smoke tests, Neon/Render steps, keep-alive
 ├── docker-compose.yml          # local API + Postgres
 └── .github/workflows/android.yml  # APK build + unit tests + server tests
@@ -67,7 +67,7 @@ Tests:
 
 ```powershell
 cd server
-python -m pytest          # 84 passed
+python -m pytest          # 116 passed, 1 skipped
 ```
 
 The same suite runs in CI (`.github/workflows/android.yml`, job `server-tests`).
@@ -200,6 +200,7 @@ address** — it goes in QR codes and must never be used as a credential.
 | `POST` | `/api/v1/topups/paypal/capture` | yes | Capture it and credit the wallet |
 | `GET` | `/api/v1/topups` | yes | Top-up history |
 | `POST` | `/api/v1/assistant/parse` | yes | Natural language → payment intent |
+| `GET` | `/api/v1/ledger/summary` | yes | Double-entry journal totals and balance check |
 
 Receipt status is `COMPLETED` or `DECLINED`; a decline always carries a
 `reason_code`.
@@ -217,7 +218,7 @@ Receipt status is `COMPLETED` or `DECLINED`; a decline always carries a
 | Insufficient balance | `E_INSUFFICIENT_BALANCE` | 45 |
 | Malformed input | `E_MALFORMED` | 100 |
 
-The 30-case fixture file is the contract between the Python and Kotlin
+The 46-case fixture file (30 canonical + 16 generated) is the contract between the Python and Kotlin
 implementations; both test suites read it, so a rule change cannot silently
 apply to only one side.
 
@@ -306,7 +307,7 @@ environment variables always win.
 
 `deploy/OUTPUT.md` is the honest ledger of this build. Summary:
 
-- **Verified:** the server boots, 84 tests pass, both smoke scripts pass against
+- **Verified:** the server boots, 116 tests pass (1 deliberate skip), both smoke scripts pass against
   a live instance, the guard fixtures pass in Python, the token checksum works.
 - **Not verified here:** Kotlin compilation, the APK, the Docker image, Render
   and Neon provisioning — this machine has no Android SDK, no Docker and no

@@ -62,7 +62,7 @@ nonce is 20 digits, not 16.
 
 **The guard is one function, tested twice.** `server/app/guard.py::screen` and
 `android/.../utils/TxGuard.kt` are mirror implementations, and both are checked
-against the same 30-case `fixtures/guard_fixtures.json`. A rule change that
+against the same 46-case `fixtures/guard_fixtures.json` (30 canonical + 16 generated). A rule change that
 lands on only one side fails the other side's tests. That file is the contract.
 
 Idempotency is enforced twice as well: an `idempotency_key` lookup before the
