@@ -20,15 +20,22 @@ this machine.
 | PayPal top-up endpoints | Tested with a fake PayPal client: wallet credited once, capture replay does not double-credit, another user's order is rejected, 503 without credentials, 502 on PayPal errors |
 | AI assistant | Rules path live-verified against a seeded peer; model path tested with a mocked OpenAI-compatible response; invalid JSON falls back to rules |
 | Double-entry journal | 8 tests in `test_ledger.py`: a settled payment writes one DEBIT + one CREDIT, declines write none, replay writes no duplicate, batch journals each accepted item, summary reconciles, backfill repairs a deleted leg |
-| Kotlin source review | Independent static review of imports, Compose BOM 2024.09.03 signatures, Retrofit paths and DTO field/type parity with `schemas.py`: no compile blockers found. This is a review, **not** a compiler. |
+| Kotlin source review | Independent static review of imports, Compose BOM 2024.09.03 signatures, Retrofit paths and DTO field/type parity with `schemas.py`. Superseded by the real CI compile, which found one nullability defect the review missed. |
 
-## Not verified here — no Android SDK, no Docker, no cloud account
+## Verified in CI (GitHub Actions)
+
+| Item | Evidence |
+|---|---|
+| Kotlin compiles | Run [43926274190](https://github.com/tayyabahmadq/Viaduct-Z/actions/runs/43926274190) on `feaaf7e`: `Assemble debug APK` succeeded on ubuntu-24.04, JDK 17, SDK platform 34 |
+| Kotlin guard parity | Same run: `testDebugUnitTest` succeeded over all 46 fixtures |
+| Debug APK | Artifact `viaduct-pay-debug`, 13,111,847 bytes, not expired |
+| Server tests in CI | Same run: `server-tests` succeeded with the pinned requirements |
+| First CI defect caught | Canonical fixture 21 carries `receiver_account_id: null`; the Kotlin DTO declared it non-null, so deserialization failed. Fixed by mirroring `guard.screen()`'s nullable receiver. This is exactly the class of bug static review cannot find. |
+
+## Not verified on this machine — no Docker, no cloud account
 
 | Item | Status | What would verify it |
 |---|---|---|
-| Kotlin compiles | **Not compiled.** No Android SDK / Gradle on this machine. | `gradle assembleDebug` locally, or the `apk` CI job |
-| Kotlin `TxGuard` fixture parity | Written to mirror `guard.py`; not executed. | `gradle testDebugUnitTest` (CI does this) |
-| `app-debug.apk` | **Not built.** Binary cannot be produced without the SDK. | CI artifact `viaduct-pay-debug` |
 | Docker image | **Not built.** Docker is not installed here. | `docker compose up --build` |
 | Render Blueprint apply | **Not executed.** No Render account. | Render dashboard, per `neon_setup.sh` |
 | Neon connection | **Not executed.** No Neon account. | `/health` plus the smoke test against the live URL |

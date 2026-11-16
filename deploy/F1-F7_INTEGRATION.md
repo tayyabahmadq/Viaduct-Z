@@ -11,7 +11,7 @@ not, and the evidence. Branch: `full-scope`. Baseline before integration:
 |---|---|---|
 | **F1** persistence | **Partially adopted**: double-entry journal, reconciliation summary, backfill, tests | F1's tree is async SQLAlchemy with `Account`/`device_id` naming and known bugs (lock swap, ceiling semantics, 56-digit token). Porting it wholesale would fight the sync server. The additive core — journal + reconciliation — was implemented against `Device`/`Payment` in `server/app/routers/ledger.py` and `server/app/backfill.py`; 8 tests in `test_ledger.py`. |
 | **F2** server | **Not adopted as base** | `F2run` needed 7 boot patches, ships zero tests, and its `security.py` generated random 48-digit device tokens that fail their own checksum. The repo server already implements the same contract with 116 tests plus PayPal/AI. Replacing it would violate the no-regression law. |
-| **F3** Android | **No tree swap**; deltas already present | The repo already uses Kotlin 2.0's `org.jetbrains.kotlin.plugin.compose` (no stale `kotlinCompilerExtensionVersion`), has no `timber` import, and already reads the canonical fixtures. F3's 49-file tree cannot be compiled here (no Android SDK); swapping it would trade a reviewed client for an unverifiable one. F3's TxGuard parity result (exact) is corroborated by the shared fixtures. |
+| **F3** Android | **No tree swap**; deltas already present | The repo already uses Kotlin 2.0's `org.jetbrains.kotlin.plugin.compose` (no stale `kotlinCompilerExtensionVersion`), has no `timber` import, and already reads the canonical fixtures. CI then compiled the retained client (run 43926274190): APK and guard tests both green. That run also caught a real parity defect — fixture 21 has a null receiver, which the Kotlin DTO had declared non-null; fixed. F3's own tree remains unverified and unneeded. |
 | **F4** QA/CI | **Adopted after correction**: `server/tests/test_contract_qa.py` | F4's helpers expected `status: "accepted"`, a `token48` history field, 4xx declines, and integer batch counts. Corrected to `COMPLETED`, `counterparty_token48`, `200 + DECLINED + reason_code`, and list-shaped `accepted`/`declined`. Its amount-triggered `E_GUARDRAIL_BLOCKED` and quarantine tests assume rules the pinned contract does not have; quarantine is recorded as a skip with the reason. 8 tests pass, 1 skip. |
 | **F5** ops | **Adopted and completed**: 5 docs under `deploy/` | F5's `cloudflared_extra.md` and `live_verification_checklist.md` were truncated mid-sentence, `neon_runbook.md` ended with a stray `</details>`, and it used `viaduct-demo` / `viaduct-db` while the live config uses `viaduct-db-env`. The docs were rewritten with correct names and complete steps. `keepalive.md` and `render.yaml` keep the repo versions (already correct). |
 | **F6** on-device | **Not integrated** | The output is a blocked report from a machine without `saas-security-kit`; it must be re-dispatched on the kit laptop under LOCAL-ONLY rules. Nothing to merge. |
@@ -27,7 +27,7 @@ not, and the evidence. Branch: `full-scope`. Baseline before integration:
   device tokens are still 44+4 with mod-97.
 - **Guard parity**: both Python and Kotlin read the same 46-case file; the
   Kotlin test asserts `size >= 30` so appends are allowed but the canonical
-  minimum is enforced.
+  minimum is enforced. CI run 43926274190 executed it green on the JVM.
 - **Smoke script** still passes against a live local server after the journal
   change (payments now write two extra rows in the same transaction).
 
@@ -36,8 +36,8 @@ not, and the evidence. Branch: `full-scope`. Baseline before integration:
 - F1's Alembic chain and Postgres-specific migration tests: not ported, because
   the demo uses `Base.metadata.create_all` and the handoff's own review found
   the migration test unable to target its temp database.
-- F3 Kotlin compilation: no Android SDK on this machine; CI's `apk` job remains
-  the referee.
+- F3's own 49-file tree: not compiled and no longer needed; the retained client
+  is the one CI builds.
 - F2/F7 Postgres paths: SQLite only here.
 - F5 dashboard steps: no Render/Neon account on this machine.
 

@@ -309,9 +309,12 @@ environment variables always win.
 
 - **Verified:** the server boots, 116 tests pass (1 deliberate skip), both smoke scripts pass against
   a live instance, the guard fixtures pass in Python, the token checksum works.
-- **Not verified here:** Kotlin compilation, the APK, the Docker image, Render
-  and Neon provisioning — this machine has no Android SDK, no Docker and no
-  cloud credentials. CI builds the APK and runs the Kotlin guard tests.
+- **Verified in CI:** the Kotlin build, the 46-case guard parity test and the
+  debug APK. Run
+  [43926274190](https://github.com/tayyabahmadq/Viaduct-Z/actions/runs/43926274190)
+  on `feaaf7e` is green; artifact `viaduct-pay-debug` (12.5 MB).
+- **Still unverified:** the Docker image, Render/Neon provisioning and a live
+  PayPal capture — this machine has no Docker and no cloud credentials.
 - **Not implemented at all:** the mesh relay, PayPal sandbox and PWA that an
   earlier draft of this package advertised. They were prose, not code.
 
@@ -329,4 +332,4 @@ environment variables always win.
 | `E_UNKNOWN_PEER` | Two devices on different servers | Same `BASE_URL` on both |
 | PayPal top-up returns 503 | No sandbox credentials in the service env | Set `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` |
 | Assistant always says `source: rules` | No `AI_API_KEY`, or the model call failed | Set the key; the fallback is intentional |
-| CI APK job fails at SDK step | First run downloads the SDK | Re-run; it is cached afterwards |
+| CI APK job fails at SDK step | `cmdline-tools` download or licence step | Check the "Install Android SDK command-line tools" step log |

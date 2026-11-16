@@ -100,9 +100,12 @@ slips through. Balances are updated under `SELECT … FOR UPDATE`.
 4. **Windows tooling.** `bash` on this machine is the WSL stub, PowerShell 5.1
    needs a BOM for `✓`, and `curl` is an alias. The deploy folder therefore
    ships both a `.sh` and a `.ps1` smoke test.
-5. **What I could not verify.** No Android SDK, no Docker and no cloud
-   credentials here, so the APK, the image and the live PayPal capture are
-   unverified and documented as such rather than claimed.
+5. **What I could not verify locally.** No Android SDK, no Docker and no cloud
+   credentials on the build machine, so CI became the referee. It caught a real
+   nullability mismatch between the Kotlin DTO and canonical fixture 21 that
+   static review had missed; after the fix, the APK and the 46-case guard test
+   are green (run 43926274190). The Docker image and a live PayPal capture
+   remain unverified and are documented as such rather than claimed.
 
 ---
 
