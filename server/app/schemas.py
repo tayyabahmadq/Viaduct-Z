@@ -133,3 +133,13 @@ class TopUpOut(BaseModel):
     currency: str
     created_at: str
     completed_at: Optional[str] = None
+
+
+class LedgerSummaryOut(BaseModel):
+    total_debits: int
+    total_credits: int
+    settled_cents: int
+    completed_payments: int
+    journal_entries: int
+    missing_entries: int
+    balanced: bool

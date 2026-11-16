@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_device
 from ..guard import db_guard
-from ..models import Device, Payment, iso, new_id, utcnow
+from ..models import Device, LedgerEntry, Payment, iso, new_id, utcnow
 from ..schemas import (
     BatchItemResult,
     BatchRequest,
@@ -116,6 +116,26 @@ def _apply(
         sender_balance_after=sender.balance_cents,
         receiver_balance_after=receiver.balance_cents,
         created_at=utcnow(),
+    )
+    # Journal the settled payment in the same transaction as the balance moves.
+    # The flush gives the FK target a row before the entries are inserted.
+    db.add(payment)
+    db.flush()
+    db.add_all(
+        [
+            LedgerEntry(
+                payment_id=payment.id,
+                device_id=sender.id,
+                direction="DEBIT",
+                amount_cents=body.amount_cents,
+            ),
+            LedgerEntry(
+                payment_id=payment.id,
+                device_id=receiver.id,
+                direction="CREDIT",
+                amount_cents=body.amount_cents,
+            ),
+        ]
     )
     return payment, True
 

@@ -1,3 +1,3 @@
 """Router package."""
 
-from . import accounts, assistant, payments, peers, tokens, topups  # noqa: F401
+from . import accounts, assistant, ledger, payments, peers, tokens, topups  # noqa: F401

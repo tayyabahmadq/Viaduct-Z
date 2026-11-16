@@ -132,7 +132,14 @@ if (-not $verified.valid) {
     Fail "Receipt token failed server-side verification"
 }
 
-# ------------------------------------------------------------ 7. histories
+# ------------------------------------------------ 7. double-entry journal
+$ledger = Invoke-Json -Method Get -Path "/api/v1/ledger/summary" -Bearer $alice.token
+if (-not $ledger.balanced) {
+    Fail "Ledger journal is not balanced: $($ledger | ConvertTo-Json -Compress)"
+}
+Write-Log ("Journal balanced: debit={0} credit={1} settled={2}" -f $ledger.total_debits, $ledger.total_credits, $ledger.settled_cents)
+
+# ------------------------------------------------------------ 8. histories
 if ($env:VERBOSE -eq "1") {
     Write-Log "History for device A"
     (Invoke-Json -Method Get -Path "/api/v1/payments?limit=5" -Bearer $alice.token) | ConvertTo-Json -Depth 6

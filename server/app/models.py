@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -76,6 +76,38 @@ class Payment(Base):
         CheckConstraint("amount_cents > 0", name="ck_payment_amount_positive"),
         CheckConstraint(
             "status IN ('COMPLETED', 'DECLINED')", name="ck_payment_status_values"
+        ),
+    )
+
+
+class LedgerEntry(Base):
+    """Double-entry journal row written when a payment settles.
+
+    Every COMPLETED payment produces exactly one DEBIT for the sender and one
+    CREDIT for the receiver, in the same transaction as the balance update.
+    Declined payments produce no journal rows.
+    """
+
+    __tablename__ = "ledger_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    payment_id: Mapped[str] = mapped_column(
+        ForeignKey("payments.id", ondelete="CASCADE"), index=True
+    )
+    device_id: Mapped[str] = mapped_column(
+        ForeignKey("devices.id", ondelete="CASCADE"), index=True
+    )
+    direction: Mapped[str] = mapped_column(String(6), nullable=False)
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "direction IN ('DEBIT', 'CREDIT')", name="ck_ledger_direction"
+        ),
+        CheckConstraint("amount_cents > 0", name="ck_ledger_amount_positive"),
+        UniqueConstraint(
+            "payment_id", "direction", name="uq_ledger_payment_direction"
         ),
     )
 

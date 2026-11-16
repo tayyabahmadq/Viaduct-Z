@@ -9,6 +9,9 @@
 #   3. a payment inside the ceiling settles
 #   4. a payment above the ceiling is declined with E_CEILING_EXCEEDED
 #   5. replaying the same idempotency key returns the identical receipt
+#   6. the receipt token verifies server-side
+#   7. the double-entry journal reconciles
+#   8. (optional) histories
 #
 # Exits 0 only if every check passes. Needs curl and Python 3 (no jq).
 
@@ -150,6 +153,16 @@ if [ "$(printf '%s' "$VERIFIED" | json valid)" != "True" ]; then
 fi
 
 # ------------------------------------------------------------ 7. histories
+# ------------------------------------------------- 7. double-entry journal
+LEDGER=$(curl -fsS "$BASE_URL/api/v1/ledger/summary" -H "authorization: Bearer $BEARER_A")
+if [ "$(printf '%s' "$LEDGER" | json balanced)" != "True" ]; then
+  err "Ledger journal is not balanced"
+  printf '%s\n' "$LEDGER" >&2
+  exit 1
+fi
+log "Journal balanced: debit=$(printf '%s' "$LEDGER" | json total_debits) credit=$(printf '%s' "$LEDGER" | json total_credits) settled=$(printf '%s' "$LEDGER" | json settled_cents)"
+
+# ------------------------------------------------------------ 8. histories
 if [ "${VERBOSE:-0}" = "1" ]; then
   log "History for device A"
   curl -fsS "$BASE_URL/api/v1/payments?limit=5" -H "authorization: Bearer $BEARER_A" | "$PYTHON" -m json.tool

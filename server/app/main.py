@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse
 from . import __version__
 from .config import get_settings
 from .db import Base, engine
-from .routers import accounts, assistant, payments, peers, tokens, topups
+from .routers import accounts, assistant, ledger, payments, peers, tokens, topups
 from .seed import seed_if_empty
 
 Base.metadata.create_all(bind=engine)
@@ -45,6 +45,7 @@ app.include_router(peers.router)
 app.include_router(tokens.router)
 app.include_router(topups.router)
 app.include_router(assistant.router)
+app.include_router(ledger.router)
 
 
 @app.get("/health")
