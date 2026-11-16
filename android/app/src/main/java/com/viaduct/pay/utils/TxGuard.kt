@@ -15,7 +15,10 @@ import java.math.BigInteger
 @Serializable
 data class TxDraft(
     val sender_account_id: String?,
-    val receiver_account_id: String,
+    // Nullable to mirror guard.screen(): the canonical fixture
+    // "malformed beats self payment" carries a null receiver, and the
+    // malformed rule fires on the null sender before the receiver is read.
+    val receiver_account_id: String?,
     val amount: Int,
     val nonce: String,
     val token48: String? = null,
@@ -47,6 +50,7 @@ object TxGuard {
 
     fun screen(tx: TxDraft, state: AccountState): GuardDecision {
         val sender = tx.sender_account_id
+        val receiver = tx.receiver_account_id
         val token = tx.token48
 
         // R0 — malformed input.
@@ -63,7 +67,7 @@ object TxGuard {
         }
 
         // R2 — quarantined recipient.
-        if (state.blacklist.contains(tx.receiver_account_id)) {
+        if (receiver != null && state.blacklist.contains(receiver)) {
             return GuardDecision("DENY", "E_QUARANTINED_PEER", "Receiver blacklisted", 100)
         }
 
