@@ -49,9 +49,26 @@ jobs:
         run: gradle assembleDebug --no-daemon --stacktrace
       - name: Run guard unit tests
         working-directory: android
-        run: gradle testDebugUnitTest --no-daemon --stacktrace
+        run: |
+          set +e
+          gradle testDebugUnitTest --no-daemon --stacktrace 2>&1 | tee /tmp/guard-tests.log
+          status=${PIPESTATUS[0]}
+          {
+            echo '### Guard unit tests'
+            echo '```'
+            tail -n 120 /tmp/guard-tests.log
+            echo '```'
+            if [ -d app/build/test-results ]; then
+              echo '### JUnit XML'
+              echo '```'
+              find app/build/test-results -name '*.xml' -exec sed -n '1,60p' {} \;
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: viaduct-pay-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          if-no-files-found: warn
