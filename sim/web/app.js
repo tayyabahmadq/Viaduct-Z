@@ -1280,7 +1280,8 @@ function ProfileScreen() {
           A web stand-in for the Viaduct Pay Android client, running against the real FastAPI
           ledger on this PC. Same endpoints, same <code>db_guard</code> rules, same 48-digit
           receipt tokens. Data lives in <code>server/viaduct-sim.db</code>; stop the simulator
-          and the session ends. The APK itself was not built here — this machine has no Android SDK.
+          and the session ends. The APK itself is built by CI (artifact
+          <code>viaduct-pay-debug</code>); this machine has no Android SDK.
         </p>
       </div>
 
