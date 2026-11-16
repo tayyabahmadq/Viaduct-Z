@@ -46,9 +46,11 @@ android {
     }
 
     // The JVM guard test reads the same fixtures the Python suite uses.
+    // Resolve explicitly from the repository root so the path cannot be
+    // reinterpreted relative to android/ instead of android/app/.
     sourceSets {
         getByName("test") {
-            resources.srcDir("../../fixtures")
+            resources.srcDir(rootProject.file("../fixtures"))
         }
     }
 }
